@@ -1,0 +1,54 @@
+name: Windows-RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Download & Extract Ngrok
+      run: |
+        Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+        Expand-Archive ngrok.zip
+
+    - name: Authenticate Ngrok
+      run: |
+        .\ngrok\ngrok.exe config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+
+    - name: Enable Remote Desktop
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
+
+    - name: Set Password for Runner User
+      run: |
+        net user runneradmin vagrant /add
+        net localgroup administrators runneradmin /add
+
+    - name: Start Ngrok Tunnel
+      run: |
+        Start-Process powershell -ArgumentList '-NoExit', '-Command', '.\ngrok\ngrok.exe tcp 3389 --region us'
+        Start-Sleep -Seconds 10
+
+    - name: Get RDP Connection Info
+      run: |
+        $response = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
+        $public_url = $response.tunnels[0].public_url
+        Write-Host "=============================================" -ForegroundColor Green
+        Write-Host "RDP CONNECT ADDRESS: $public_url" -ForegroundColor Yellow
+        Write-Host "USERNAME: runneradmin" -ForegroundColor Yellow
+        Write-Host "PASSWORD: vagrant" -ForegroundColor Yellow
+        Write-Host "=============================================" -ForegroundColor Green
+
+    - name: Keep Alive (6 Hours Loop)
+      run: |
+        $count = 0
+        while ($count -lt 350) {
+          Start-Sleep -Seconds 60
+          $count++
+          Write-Host "Still running: $count minutes elapsed..."
+        }
