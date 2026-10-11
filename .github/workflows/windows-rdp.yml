@@ -26,13 +26,13 @@ jobs:
 
     - name: Set Password for Runner User
       run: |
-        net user runneradmin vagrant /add
-        net localgroup administrators runneradmin /add
+        $admin = [adsi]("WinNT://./runneradmin,user")
+        $admin.SetPassword("vagrant")
 
     - name: Start Ngrok Tunnel
       run: |
         Start-Process powershell -ArgumentList '-NoExit', '-Command', '.\ngrok\ngrok.exe tcp 3389 --region us'
-        Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 12
 
     - name: Get RDP Connection Info
       run: |
