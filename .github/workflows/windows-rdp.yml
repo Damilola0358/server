@@ -27,12 +27,18 @@ jobs:
     - name: Set Password for Runner User
       run: |
         $admin = [adsi]("WinNT://./runneradmin,user")
-        $admin.SetPassword("vagrant")
+        $admin.SetPassword("Vagrant@123456")
 
     - name: Start Ngrok Tunnel
       run: |
         Start-Process powershell -ArgumentList '-NoExit', '-Command', '.\ngrok\ngrok.exe tcp 3389 --region us'
         Start-Sleep -Seconds 12
+
+    - name: Download Anti-Detect Browsers to Desktop
+      run: |
+        $desktop = [Environment]::GetFolderPath("Desktop")
+        Write-Host "Downloading Chrome and Anti-Detect Browsers to Desktop..."
+        Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile "$desktop\ChromeSetup.exe"
 
     - name: Get RDP Connection Info
       run: |
@@ -41,7 +47,7 @@ jobs:
         Write-Host "=============================================" -ForegroundColor Green
         Write-Host "RDP CONNECT ADDRESS: $public_url" -ForegroundColor Yellow
         Write-Host "USERNAME: runneradmin" -ForegroundColor Yellow
-        Write-Host "PASSWORD: vagrant" -ForegroundColor Yellow
+        Write-Host "PASSWORD: Vagrant@123456" -ForegroundColor Yellow
         Write-Host "=============================================" -ForegroundColor Green
 
     - name: Keep Alive (6 Hours Loop)
@@ -50,5 +56,5 @@ jobs:
         while ($count -lt 350) {
           Start-Sleep -Seconds 60
           $count++
-          Write-Host "Still running: $count minutes elapsed..."
+          Write-Host "Active: $count minutes elapsed..."
         }
