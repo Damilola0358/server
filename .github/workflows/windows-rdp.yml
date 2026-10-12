@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-latest
     timeout-minutes: 360
 
     steps:
@@ -34,11 +34,30 @@ jobs:
         Start-Process powershell -ArgumentList '-NoExit', '-Command', '.\ngrok\ngrok.exe tcp 3389 --region us'
         Start-Sleep -Seconds 12
 
-    - name: Download Anti-Detect Browsers to Desktop
+    - name: Pre-Download Anti-Detect Browsers & Chrome to Desktop
       run: |
-        $desktop = [Environment]::GetFolderPath("Desktop")
-        Write-Host "Downloading Chrome and Anti-Detect Browsers to Desktop..."
+        $desktop = "C:\Users\runneradmin\Desktop"
+        Write-Host "Auto-downloading Chrome, Undetectable, and BitBrowser to Desktop..."
+        
+        # Download Chrome
         Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile "$desktop\ChromeSetup.exe"
+        
+        # Download Undetectable Installer
+        try {
+          Invoke-WebRequest -Uri "https://undetectable.io/download/windows" -OutFile "$desktop\UndetectableSetup.exe" -UserAgent "Mozilla/5.0"
+        } catch {
+          Write-Host "Redirect fallback for Undetectable"
+        }
+
+        # 1-Click Desktop Shortcuts for BitBrowser & Undetectable
+        $WshShell = New-Object -ComObject WScript.Shell
+        $Shortcut = $WshShell.CreateShortcut("$desktop\Open_BitBrowser_Download.url")
+        $Shortcut.TargetPath = "https://www.bitbrowser.net/download/"
+        $Shortcut.Save()
+
+        $Shortcut2 = $WshShell.CreateShortcut("$desktop\Open_Undetectable_Download.url")
+        $Shortcut2.TargetPath = "https://undetectable.io/download/"
+        $Shortcut2.Save()
 
     - name: Get RDP Connection Info
       run: |
